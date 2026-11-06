@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pet AI Wellness Advisor — Interactive Prototype & Engineering Spec</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-warm: #F5F0EB;
+            --bg-card: #FFFFFF;
+            --text-primary: #1A1A1A;
+            --text-secondary: #6B6B6B;
+            --text-tertiary: #9A9A9A;
+            --accent-copper: #C87941;
+            --accent-green: #1E3A2F;
+            --accent-green-hover: #2A4F40;
+            --border-light: #E8E2DC;
+            --border-chip: #D4CCC4;
+            --shadow-soft: 0 2px 8px rgba(0,0,0,0.04);
+            --shadow-medium: 0 8px 24px rgba(0,0,0,0.08);
+            --shadow-phone: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            --shadow-button: 0 4px 12px rgba(30,58,47,0.3);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-full: 9999px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: var(--bg-warm); 
+            color: var(--text-primary); 
+            line-height: 1.5; 
+            -webkit-font-smoothing: antialiased;
+            padding: 2rem;
+        }
+
+        .serif { font-family: 'Playfair Display', serif; }
+
+        .main-container { max-width: 1400px; margin: 0 auto; }
+
+        /* Header & Stats */
+        .page-header { text-align: center; margin-bottom: 2rem; }
+        .page-header h1 { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-primary); }
+        .page-header p { color: var(--text-secondary); font-size: 1rem; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 3rem; }
+        .stat-card { background: var(--bg-card); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-light); box-shadow: var(--shadow-soft); }
+        .stat-label { font-size: 0.7rem; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+        .stat-value { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); }
+        .stat-value.highlight { color: var(--accent-copper); }
+        .stat-desc { font-size: 0.75rem; color: var(--text-tertiary); margin-top: 0.25rem; }
+
+        /* Split View */
+        .split-view { display: grid; grid-template-columns: 400px 1fr; gap: 2rem; align-items: start; margin-bottom: 4rem; }
+
+        /* =========================================
+           PHONE MOCKUP
+           ========================================= */
+        .phone-mockup { 
+            width: 100%; max-width: 375px; height: 812px; background: var(--bg-warm); 
+            border-radius: 45px; box-shadow: var(--shadow-phone); position: relative; 
+            overflow: hidden; border: 12px solid #1A1A1A; margin: 0 auto;
+        }
+        .phone-notch { 
+            position: absolute; top: 0; left: 50%; transform: translateX(-50%); 
+            width: 120px; height: 25px; background: #1A1A1A; border-radius: 0 0 18px 18px; z-index: 10;
+        }
+        .phone-screen { width: 100%; height: 100%; background: var(--bg-warm); overflow: hidden; position: relative; display: flex; flex-direction: column; }
+        
+        .quiz-top-bar { padding: 2.5rem 1.5rem 1rem; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+        .step-indicator { font-size: 0.75rem; font-weight: 700; color: var(--accent-copper); letter-spacing: 0.1em; text-transform: uppercase; }
+        .close-btn { cursor: pointer; color: var(--text-tertiary); font-size: 1.5rem; line-height: 1; transition: color 0.2s; background: none; border: none; }
+        .close-btn:hover { color: var(--text-primary); }
+
+        .quiz-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 0 1.5rem 1.5rem; -ms-overflow-style: none; scrollbar-width: none; }
+        .quiz-scroll::-webkit-scrollbar { display: none; }
+
+        .quiz-step { display: none; flex-direction: column; }
+        .quiz-step.active { display: flex; animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(15px); } to { opacity: 1; transform: translateX(0); } }
+
+        .dog-image-container { display: flex; justify-content: center; margin-bottom: 1.5rem; margin-top: 1rem; }
+        .dog-image { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 4px solid white; box-shadow: var(--shadow-medium); }
+
+        .step-title { font-family: 'Playfair Display', serif; font-size: 1.75rem; font-weight: 600; text-align: center; margin-bottom: 0.75rem; color: var(--text-primary); line-height: 1.2; }
+        .step-subtitle { font-size: 0.9rem; color: var(--text-secondary); text-align: center; margin-bottom: 2rem; line-height: 1.5; }
+
+        .form-group { margin-bottom: 1.25rem; }
+        .form-label { display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        .form-input { width: 100%; padding: 1rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.95rem; font-family: inherit; background: white; transition: all 0.2s; }
+        .form-input:focus { outline: none; border-color: var(--accent-green); box-shadow: 0 0 0 3px rgba(30,58,47,0.1); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+        .chip-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .chip { padding: 0.6rem 1rem; border: 1.5px solid var(--border-chip); border-radius: var(--radius-full); cursor: pointer; font-size: 0.85rem; font-weight: 500; color: var(--text-primary); background: white; transition: all 0.2s; user-select: none; }
+        .chip:hover { border-color: var(--accent-green); }
+        .chip.selected { border-color: var(--accent-green); background: var(--accent-green); color: white; }
+        .chip input { display: none; }
+
+        .ai-bubble { background: white; border: 1px solid var(--border-light); padding: 1.25rem; border-radius: var(--radius-lg); margin-bottom: 1.5rem; box-shadow: var(--shadow-soft); }
+        .ai-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; }
+        .ai-icon { width: 24px; height: 24px; background: var(--accent-copper); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.8rem; }
+        .ai-label { font-size: 0.7rem; font-weight: 700; color: var(--accent-copper); letter-spacing: 0.1em; text-transform: uppercase; }
+        .ai-text { font-size: 0.9rem; color: var(--text-primary); line-height: 1.5; }
+
+        .upload-zone { border: 2px dashed var(--border-chip); border-radius: var(--radius-lg); padding: 2.5rem 1.5rem; text-align: center; background: white; cursor: pointer; transition: all 0.2s; margin-bottom: 1.5rem; }
+        .upload-zone:hover { border-color: var(--accent-green); background: #FAFAF8; }
+        .upload-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+        .upload-text { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.25rem; }
+        .upload-hint { font-size: 0.75rem; color: var(--text-tertiary); }
+
+        .loading-container { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 3rem 2rem; text-align: center; height: 100%; }
+        .spinner { width: 48px; height: 48px; border: 3px solid var(--border-light); border-top-color: var(--accent-green); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 1.5rem; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-title { font-family: 'Playfair Display', serif; font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; }
+        .loading-subtitle { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 2rem; }
+        .loading-steps { width: 100%; text-align: left; }
+        .load-step { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; font-size: 0.85rem; color: var(--text-tertiary); transition: all 0.3s; }
+        .load-step.done { color: var(--accent-green); font-weight: 500; }
+
+        .result-header { text-align: center; margin-bottom: 1.5rem; }
+        .result-badge { display: inline-block; background: var(--accent-copper); color: white; padding: 0.35rem 0.875rem; border-radius: var(--radius-full); font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 1rem; }
+        .result-card { background: white; border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1rem; box-shadow: var(--shadow-soft); border: 1px solid var(--border-light); }
+        .result-card.primary { border: 2px solid var(--accent-green); }
+        .result-img { width: 100%; height: 160px; object-fit: cover; border-radius: var(--radius-md); margin-bottom: 1rem; background: #eee; }
+        .result-title { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; }
+        .result-price { font-size: 1rem; font-weight: 700; color: var(--accent-green); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
+        .stock-badge { font-weight: 400; font-size: 0.75rem; background: #DCFCE7; color: #166534; padding: 0.2rem 0.5rem; border-radius: var(--radius-full); }
+        .result-desc { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6; }
+        
+        .cross-sell-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1.5rem; }
+        .cross-sell-card { background: white; border-radius: var(--radius-md); padding: 1rem; box-shadow: var(--shadow-soft); border: 1px solid var(--border-light); }
+        .cross-sell-card .result-img { height: 80px; margin-bottom: 0.5rem; }
+        .cross-sell-card .result-title { font-size: 0.85rem; margin-bottom: 0.25rem; }
+        .cross-sell-card .result-price { font-size: 0.85rem; margin-bottom: 0; }
+
+        .btn { width: 100%; padding: 1.125rem; border: none; border-radius: var(--radius-md); font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.2s; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+        .btn-primary { background: var(--accent-green); color: white; box-shadow: var(--shadow-button); }
+        .btn-primary:hover { background: var(--accent-green-hover); transform: translateY(-1px); }
+        .btn-secondary { background: white; color: var(--text-primary); border: 1.5px solid var(--border-chip); margin-bottom: 0.75rem; }
+        .btn-secondary:hover { background: var(--bg-warm); }
+        .btn-container { margin-top: auto; padding-top: 1.5rem; }
+
+        /* =========================================
+           ADMIN DASHBOARD
+           ========================================= */
+        .admin-panel { background: var(--bg-card); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-medium); border: 1px solid var(--border-light); }
+        .admin-header-bar { background: #1A1A1A; color: white; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+        .admin-header-title { font-weight: 600; font-size: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+        .admin-header-title::before { content: ""; display: block; width: 10px; height: 10px; background: #10B981; border-radius: 50%; }
+        .admin-live-tag { font-family: monospace; font-size: 0.8rem; color: #10B981; display: flex; align-items: center; gap: 0.5rem; }
+        .admin-live-tag::before { content: ""; display: block; width: 8px; height: 8px; background: #10B981; border-radius: 50%; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+        .admin-body { padding: 2rem; background: #FAFAF9; }
+        .admin-warning { background: #FEF3C7; border: 1px solid #FCD34D; color: #92400E; padding: 0.75rem 1rem; border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 500; display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .btn-save { background: var(--accent-green); color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+
+        .admin-section { margin-bottom: 2rem; }
+        .admin-section-title { font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-primary); margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; }
+        .sku-count { background: var(--bg-warm); padding: 0.2rem 0.6rem; border-radius: var(--radius-full); font-size: 0.75rem; color: var(--accent-copper); }
+
+        .admin-form-row { margin-bottom: 1rem; }
+        .admin-label { display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-secondary); }
+        .admin-input, .admin-select { width: 100%; padding: 0.75rem; border: 1px solid var(--border-chip); border-radius: var(--radius-sm); font-size: 0.9rem; background: white; font-family: inherit; }
+        .admin-input:focus, .admin-select:focus { outline: none; border-color: var(--accent-green); }
+
+        .admin-table-container { background: white; border-radius: var(--radius-md); border: 1px solid var(--border-light); overflow: hidden; }
+        .admin-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .admin-table th { text-align: left; padding: 1rem; background: #FAFAF9; border-bottom: 1px solid var(--border-light); font-weight: 600; color: var(--text-secondary); font-size: 0.75rem; text-transform: uppercase; }
+        .admin-table td { padding: 1rem; border-bottom: 1px solid var(--border-light); color: var(--text-primary); }
+        .admin-table tr:last-child td { border-bottom: none; }
+        
+        .badge { padding: 0.25rem 0.625rem; border-radius: var(--radius-full); font-size: 0.7rem; font-weight: 600; }
+        .badge-primary { background: #FEF3C7; color: #92400E; }
+        .badge-secondary { background: #F3F4F6; color: #4B5563; }
+
+        .admin-actions-row { display: flex; gap: 1rem; margin-bottom: 1rem; align-items: center; }
+        .btn-admin { padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 600; cursor: pointer; border: none; }
+        .btn-admin-dark { background: var(--accent-green); color: white; }
+        .btn-admin-outline { background: white; border: 1px solid var(--border-chip); color: var(--text-primary); }
+
+        /* Specs Section */
+        .specs-section { border-top: 1px solid var(--border-light); padding-top: 3rem; }
+        .specs-section h2 { font-family: 'Playfair Display', serif; font-size: 1.5rem; margin-bottom: 1.5rem; }
+        .specs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+        .spec-card { background: var(--bg-card); padding: 1.5rem; border-radius: var(--radius-lg); border: 1px solid var(--border-light); }
+        .spec-number { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--accent-green); color: white; border-radius: 50%; font-size: 0.8rem; font-weight: 700; margin-bottom: 1rem; }
+        .spec-title { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; }
+        .spec-desc { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; }
+        
+        .code-block { background: #1A1A1A; color: #E2E8F0; padding: 1.5rem; border-radius: var(--radius-md); font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; overflow-x: auto; line-height: 1.6; }
+        .code-keyword { color: #C084FC; } .code-string { color: #86EFAC; } .code-function { color: #60A5FA; } .code-comment { color: #64748B; }
+
+        .footer-text { text-align: center; margin-top: 3rem; color: var(--text-tertiary); font-size: 0.8rem; }
+
+        /* Toast Notification */
+        .toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--accent-green); color: white; padding: 0.75rem 1.5rem; border-radius: var(--radius-full); font-size: 0.9rem; font-weight: 500; box-shadow: var(--shadow-medium); opacity: 0; transition: all 0.3s ease; z-index: 100; }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+        @media (max-width: 1024px) {
+            .split-view { grid-template-columns: 1fr; }
+            .phone-mockup { margin-bottom: 2rem; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .specs-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <div class="page-header">
+            <h1>Pet AI Wellness Advisor</h1>
+            <p>Custom Shopify Extension Interface & Secure Execution Specs</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total Scope</div>
+                <div class="stat-value">5 Screens</div>
+                <div class="stat-desc">Optimized dynamic state UI</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Project Budget</div>
+                <div class="stat-value highlight">$500 Fixed</div>
+                <div class="stat-desc">Includes Admin & Store extension</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Security Level</div>
+                <div class="stat-value">100% Guarded</div>
+                <div class="stat-desc">Zero API client vulnerability</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Build Framework</div>
+                <div class="stat-value">Shopify App Embed</div>
+                <div class="stat-desc">Polaris Admin / Liquid Extension</div>
+            </div>
+        </div>
+
+        <div class="split-view">
+            <!-- Phone Mockup -->
+            <div class="phone-mockup">
+                <div class="phone-notch"></div>
+                <div class="phone-screen">
+                    <div class="quiz-top-bar">
+                        <span class="step-indicator" id="step-indicator">STEP 1 OF 5</span>
+                        <button class="close-btn" onclick="resetQuiz()" aria-label="Close Quiz">✕</button>
+                    </div>
+                    
+                    <div class="quiz-scroll" id="quiz-scroll">
+                        <!-- Step 1 -->
+                        <div class="quiz-step active" id="step-1">
+                            <div class="dog-image-container">
+                                <img src="https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=250&h=250" class="dog-image" alt="Happy Dog">
+                            </div>
+                            <h2 class="step-title">Let's get to know your dog</h2>
+                            <p class="step-subtitle">Tell us a few details to help our AI personalize their wellness & nutrition recommendations.</p>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Dog's Name</label>
+                                <input type="text" class="form-input" placeholder="e.g., Buster" id="dog-name-input">
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Breed</label>
+                                    <input type="text" class="form-input" placeholder="Golden Retriever">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Age</label>
+                                    <select class="form-input">
+                                        <option>Puppy (0-1 year)</option>
+                                        <option selected>1-3 years</option>
+                                        <option>4-7 years</option>
+                                        <option>Senior (8+)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Main Health Concern <span style="font-weight: 400; text-transform: none; color: var(--text-tertiary);">(Select multiple)</span></label>
+                                <div class="chip-grid" id="multi-select-chips">
+                                    <label class="chip selected"><input type="checkbox" checked> Skin & Coat</label>
+                                    <label class="chip"><input type="checkbox"> Digestion</label>
+                                    <label class="chip"><input type="checkbox"> Joints & Mobility</label>
+                                    <label class="chip"><input type="checkbox"> Anxiety & Calm</label>
+                                    <label class="chip"><input type="checkbox"> Weight Management</label>
+                                </div>
+                            </div>
+
+                            <div class="btn-container">
+                                <button class="btn btn-primary" onclick="nextStep(2)">Continue →</button>
+                            </div>
+                        </div>
+
+                        <!-- Step 2 -->
+                        <div class="quiz-step" id="step-2">
+                            <div class="ai-bubble">
+                                <div class="ai-header">
+                                    <div class="ai-icon">✨</div>
+                                    <span class="ai-label">AI Assistant</span>
+                                </div>
+                                <div class="ai-text">
+                                    Let's dig deeper into Buster's skin & coat. Based on his profile, how often does he show symptoms of distress or irritation?
+                                </div>
+                            </div>
+                            
+                            <div class="chip-grid" id="single-select-chips" style="flex-direction: column;">
+                                <label class="chip"><input type="radio" name="symptom"> Nearly constantly (Severe irritation)</label>
+                                <label class="chip selected"><input type="radio" name="symptom" checked> A few times a day (Moderate)</label>
+                                <label class="chip"><input type="radio" name="symptom"> Occasionally (Mostly after outdoors)</label>
+                                <label class="chip"><input type="radio" name="symptom"> Rarely or never</label>
+                            </div>
+                            
+                            <div class="form-group" style="margin-top: 1.5rem;">
+                                <label class="form-label">Additional observations (Optional)</label>
+                                <textarea class="form-input" rows="3" style="resize: none;"></textarea>
+                            </div>
+
+                            <div class="btn-container">
+                                <button class="btn btn-primary" onclick="nextStep(3)">Continue →</button>
+                            </div>
+                        </div>
+
+                        <!-- Step 3 -->
+                        <div class="quiz-step" id="step-3">
+                            <div class="dog-image-container">
+                                <img src="https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=250&h=250" class="dog-image" alt="Happy Dog">
+                            </div>
+                            <h2 class="step-title">Upload a photo of Buster</h2>
+                            <p class="step-subtitle">An image helps evaluate his overall physical condition and fur/skin health.</p>
+                            
+                            <div class="upload-zone">
+                                <div class="upload-icon">📷</div>
+                                <div class="upload-text">Tap or click to browse photos</div>
+                                <div class="upload-hint">JPG, PNG up to 10MB</div>
+                            </div>
+                            
+                            <div class="btn-container">
+                                <button class="btn btn-primary" onclick="nextStep(4)">Analyze Photo & Profile</button>
+                                <button class="btn btn-secondary" onclick="nextStep(4)">Skip upload, proceed with profile only</button>
+                            </div>
+                        </div>
+
+                        <!-- Step 4 -->
+                        <div class="quiz-step" id="step-4">
+                            <div class="loading-container">
+                                <div class="spinner"></div>
+                                <h3 class="loading-title">Analyzing Buster's needs...</h3>
+                                <p class="loading-subtitle">Synthesizing clinical guidelines, ingredients databases & matching store formulas.</p>
+                                
+                                <div class="loading-steps">
+                                    <div class="load-step done" id="load-1"><span>✔</span> Loading concern dataset...</div>
+                                    <div class="load-step" id="load-2"><span>2</span> Comparing symptoms with 120+ clinical models...</div>
+                                    <div class="load-step" id="load-3"><span>3</span> Formulating dosage and selecting targeted SKU...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 5 -->
+                        <div class="quiz-step" id="step-5">
+                            <div class="result-header">
+                                <span class="result-badge">✦ Most Matched for Skin & Coat</span>
+                                <h2 class="step-title" style="font-size: 1.5rem;">Buster's Tailored Recipe</h2>
+                                <p class="step-subtitle" style="margin-bottom: 0;">Specifically formulated to treat identified health priorities.</p>
+                            </div>
+                            
+                            <div class="result-card primary">
+                                <!-- Fixed reliable image URL -->
+                                <img src="https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&q=80&w=400&h=300" class="result-img" alt="Salmon Oil Bottle">
+                                <h4 class="result-title">Salmon & Chamomile Skin & Coat Oil</h4>
+                                <div class="result-price">£24.00 <span class="stock-badge">In stock</span></div>
+                                <p class="result-desc">Rich in Omega-3 and natural soothing properties to comfort irritated skin. Helps provide relief from itchiness while building back vital natural barrier coats.</p>
+                            </div>
+
+                            <p class="form-label" style="margin-bottom: 0.75rem;">Complimentary Essentials</p>
+                            <div class="cross-sell-grid">
+                                <div class="cross-sell-card">
+                                    <img src="https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?auto=format&fit=crop&q=80&w=150&h=150" class="result-img" alt="Probiotic">
+                                    <h4 class="result-title">Probiotic Blend</h4>
+                                    <div class="result-price">£18.00</div>
+                                </div>
+                                <div class="cross-sell-card">
+                                    <img src="https://images.unsplash.com/photo-1601758228041-f3b2795255f1?auto=format&fit=crop&q=80&w=150&h=150" class="result-img" alt="Chews">
+                                    <h4 class="result-title">Mobility Bite Chews</h4>
+                                    <div class="result-price">£21.50</div>
+                                </div>
+                            </div>
+
+                            <div class="btn-container">
+                                <button class="btn btn-primary" onclick="showToast('Added to Shopify Cart!')">Add Custom Plan to Cart · £24.00</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Dashboard -->
+            <div class="admin-panel">
+                <div class="admin-header-bar">
+                    <div class="admin-header-title">Shopify Admin Dashboard</div>
+                    <div class="admin-live-tag">Live Extension Interface</div>
+                </div>
+                
+                <div class="admin-body">
+                    <div class="admin-warning">
+                        <span>🚨 Unsaved configuration changes found!</span>
+                        <button class="btn-save" onclick="showToast('Configuration Saved!')">Save Dashboard Configs</button>
+                    </div>
+
+                    <div class="admin-section">
+                        <div class="admin-section-title">Gemini API Settings</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div class="admin-form-row">
+                                <label class="admin-label">Gemini API Token key *</label>
+                                <input type="password" class="admin-input" value="AIzaSy...[REDACTED]">
+                            </div>
+                            <div class="admin-form-row">
+                                <label class="admin-label">AI Model Strategy Selection</label>
+                                <select class="admin-select">
+                                    <option>Gemini 1.5 Flash (Affordable, Speed Optimization)</option>
+                                    <option selected>Gemini 1.5 Pro (Precision Context Mapping)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="admin-form-row">
+                            <label class="admin-label">Personal Finetune Engine</label>
+                            <select class="admin-select">
+                                <option selected>Enabled - Dynamic Products Match Criteria</option>
+                                <option>Disabled</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="admin-section">
+                        <div class="admin-section-title">
+                            Dynamic Products Match Criteria
+                            <span class="sku-count">8 SKUs Registered</span>
+                        </div>
+                        <div class="admin-table-container">
+                            <table class="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th>Matched Case Concern</th>
+                                        <th>Assigned Formula SKU Name</th>
+                                        <th>Pricing Tier</th>
+                                        <th>Target Priority</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>Skin & Coat</td><td>Salmon & Chamomile Skin & Coat Oil</td><td>£24.00</td><td><span class="badge badge-primary">Primary</span></td></tr>
+                                    <tr><td>Digestion</td><td>Probiotic Blend</td><td>£18.00</td><td><span class="badge badge-secondary">Secondary</span></td></tr>
+                                    <tr><td>Joints & Mobility</td><td>Joints & Mobility Bite Chews</td><td>£21.50</td><td><span class="badge badge-primary">High Importance</span></td></tr>
+                                    <tr><td>Anxiety & Calm</td><td>Calming Hemp Treats</td><td>£19.99</td><td><span class="badge badge-secondary">Tier 3 Option</span></td></tr>
+                                    <tr><td>Weight Management</td><td>Metabolic Digestion Topper</td><td>£22.00</td><td><span class="badge badge-primary">High Importance</span></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="admin-section" style="margin-bottom: 0;">
+                        <div class="admin-section-title">
+                            Submissions Database Logger
+                            <span style="font-size: 0.85rem; font-weight: 400; text-transform: none; color: var(--text-secondary);">5 Total</span>
+                        </div>
+                        <div class="admin-actions-row">
+                            <input type="text" class="admin-input" placeholder="Search profiles..." style="width: 300px;">
+                            <button class="btn-admin btn-admin-outline">Filter</button>
+                            <button class="btn-admin btn-admin-dark" style="margin-left: auto;" onclick="showToast('Simulated Submission Added!')">Add Simulated Submission</button>
+                        </div>
+                        <div class="admin-table-container">
+                            <table class="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th>Created Date</th>
+                                        <th>Dog Details</th>
+                                        <th>Identified Priority</th>
+                                        <th>Advised Formula</th>
+                                        <th>Result Details</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>2026-11-06</td><td>Buster (Golden retriever, 1yr)</td><td>Skin & Coat</td><td>SKU-101</td><td><a href="#" style="color: var(--accent-green); text-decoration: none; font-weight: 600;">View</a></td></tr>
+                                    <tr><td>2026-11-05</td><td>Bella (Bulldog, 3yrs)</td><td>Digestion</td><td>SKU-102</td><td><a href="#" style="color: var(--accent-green); text-decoration: none; font-weight: 600;">View</a></td></tr>
+                                    <tr><td>2026-11-03</td><td>Luna (Pointer, 5yrs)</td><td>Joints & Mobility</td><td>SKU-103</td><td><a href="#" style="color: var(--accent-green); text-decoration: none; font-weight: 600;">View</a></td></tr>
+                                    <tr><td>2026-10-29</td><td>Teddy (Poodle, 10yrs)</td><td>Anxiety & Calm</td><td>SKU-104</td><td><a href="#" style="color: var(--accent-green); text-decoration: none; font-weight: 600;">View</a></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tech Specs -->
+        <div class="specs-section">
+            <h2>🛠 Platform Development Architecture</h2>
+            <div class="specs-grid">
+                <div class="spec-card">
+                    <div class="spec-number">1</div>
+                    <h3 class="spec-title">Two-Tier AI Isolation (Secure proxy)</h3>
+                    <p class="spec-desc">We store Gemini credentials securely on a private proxy database backend, isolating API calls from theme exposure to prevent client-side intercept. No credentials appear in Liquid script assets.</p>
+                </div>
+                <div class="spec-card">
+                    <div class="spec-number">2</div>
+                    <h3 class="spec-title">Standard Shopify App Embed Implementation</h3>
+                    <p class="spec-desc">Developed completely inside <code style="background: var(--bg-warm); padding: 0.1rem 0.4rem; border-radius: 4px; font-family: monospace;">extensions/pet-wellness-advisor/blocks/pet_quiz_embed.liquid</code> using pure JS state layers and customized typography variables.</p>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 1rem; font-weight: 600; font-size: 0.9rem;">Dynamic Shopify Cart Payload Mock Script</div>
+            <div class="code-block">
+<span class="code-comment">// Shopify AJAX Cart call logic trigger</span>
+<span class="code-function">fetch</span>(<span class="code-string">'/cart/add.js'</span>, {
+  method: <span class="code-string">'POST'</span>,
+  headers: { <span class="code-string">'Content-Type'</span>: <span class="code-string">'application/json'</span> },
+  body: JSON.<span class="code-function">stringify</span>({
+    items: [{ id: matchedSkuVariantId, quantity: 1 }]
+  })
+}).<span class="code-function">then</span>(() => {
+  window.location.href = <span class="code-string">'/checkout'</span>;
+});
+            </div>
+            
+            <div class="footer-text">
+                <p>© 2026 Pet Brand — Build scope fixed at 5 screens.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">Action Successful</div>
+
+    <script>
+        // Quiz Progression
+        function nextStep(stepNum) {
+            document.querySelectorAll('.quiz-step').forEach(el => el.classList.remove('active'));
+            document.getElementById('step-' + stepNum).classList.add('active');
+            document.getElementById('step-indicator').innerText = 'STEP ' + stepNum + ' OF 5';
+            document.getElementById('quiz-scroll').scrollTop = 0;
+
+            if (stepNum === 4) {
+                // Reset loading steps
+                document.getElementById('load-2').classList.remove('done');
+                document.getElementById('load-2').innerHTML = '<span>2</span> Comparing symptoms with 120+ clinical models...';
+                document.getElementById('load-3').classList.remove('done');
+                document.getElementById('load-3').innerHTML = '<span>3</span> Formulating dosage and selecting targeted SKU...';
+
+                setTimeout(() => {
+                    document.getElementById('load-2').classList.add('done');
+                    document.getElementById('load-2').innerHTML = '<span>✔</span> Comparing symptoms with 120+ clinical models...';
+                }, 1000);
+                setTimeout(() => {
+                    document.getElementById('load-3').classList.add('done');
+                    document.getElementById('load-3').innerHTML = '<span>✔</span> Formulating dosage and selecting targeted SKU...';
+                }, 2000);
+                setTimeout(() => { nextStep(5); }, 3200);
+            }
+        }
+
+        // Reset Quiz (Close Button)
+        function resetQuiz() {
+            document.querySelectorAll('.quiz-step').forEach(el => el.classList.remove('active'));
+            document.getElementById('step-1').classList.add('active');
+            document.getElementById('step-indicator').innerText = 'STEP 1 OF 5';
+            document.getElementById('quiz-scroll').scrollTop = 0;
+            showToast('Quiz Reset to Step 1');
+        }
+
+        // Toast Notification
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.innerText = message;
+            toast.classList.add('show');
+            setTimeout(() => { toast.classList.remove('show'); }, 3000);
+        }
+
+        // Multi-select logic (Step 1)
+        document.querySelectorAll('#multi-select-chips .chip').forEach(chip => {
+            chip.addEventListener('click', function(e) {
+                e.preventDefault();
+                this.classList.toggle('selected');
+                const input = this.querySelector('input');
+                input.checked = !input.checked;
+            });
+        });
+
+        // Single-select logic (Step 2)
+        document.querySelectorAll('#single-select-chips .chip').forEach(chip => {
+            chip.addEventListener('click', function() {
+                const group = this.parentElement;
+                group.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+                this.classList.add('selected');
+                this.querySelector('input').checked = true;
+            });
+        });
+    </script>
+</body>
+</html>
